@@ -1,6 +1,7 @@
 const express = require("express");
 const app = express();
 const { MongoClient } = require("mongodb");
+const ObjectID = require("mongodb").ObjectID;
 const cors = require("cors");
 require("dotenv").config();
 const port = 5000;
@@ -30,7 +31,7 @@ client.connect((err) => {
       res.send(books);
     });
   });
-  
+
   //issue book get
   app.get("/getIssueBooks", (req, res) => {
     issueBooksCollection.find().toArray((err, issueBooks) => {
@@ -67,12 +68,44 @@ client.connect((err) => {
       res.send(books);
     });
   });
-
+  //add admin
   app.post("/addLibrarian", (req, res) => {
     const librarian = req.body;
     librarianCollection.insertOne(librarian).then((result) => {
       console.log("librarian ", result.acknowledged);
       res.send(result.acknowledged > 0);
+    });
+  });
+
+  //update issue book
+  app.patch("/update/:id", (req, res) => {
+    const id = ObjectID(req.params.id);
+    issueBooksCollection
+      .updateOne(
+        { _id: id },
+        {
+          $set: {
+            bookName: req.body.bookName,
+            department: req.body.department,
+            issueDate: req.body.issueDate,
+            returnDate: req.body.returnDate,
+            roll: req.body.roll,
+            semester: req.body.semester,
+            studentName: req.body.studentName,
+          },
+        }
+      )
+      .then((result) => {
+        console.log("Update", result);
+        res.send(result.matchedCount > 0);
+      });
+  });
+
+  app.delete("/itemDeleted/:id", (req, res) => {
+    const id = ObjectID(req.params.id);
+    issueBooksCollection.deleteOne({ _id: id }).then((result) => {
+      console.log("delete", result);
+      res.send(result.deletedCount > 0);
     });
   });
 });
